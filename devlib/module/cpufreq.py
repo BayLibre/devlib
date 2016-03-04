@@ -156,8 +156,14 @@ class CpufreqModule(Module):
                     path = '/sys/devices/system/cpu/{}/cpufreq/{}/{}'.format(cpu, governor, tunable)
                     self.target.write_value(path, value)
                 except TargetError:  # May be an older kernel
-                    path = '/sys/devices/system/cpu/cpufreq/{}/{}'.format(governor, tunable)
-                    self.target.write_value(path, value)
+		    try:
+                        path = '/sys/devices/system/cpu/cpufreq/{}/{}'.format(governor, tunable)
+                        self.target.write_value(path, value)
+		    except TargetError:  # May be a newer kernel
+                        path = '/sys/devices/system/cpu/cpufreq/policy0/{}/{}'.format(governor, tunable)
+                        self.target.write_value(path, value, False) # Do not check
+                        path = '/sys/devices/system/cpu/cpufreq/policy1/{}/{}'.format(governor, tunable)
+                        self.target.write_value(path, value, False) # Do not check
             else:
                 message = 'Unexpected tunable {} for governor {} on {}.\n'.format(tunable, governor, cpu)
                 message += 'Available tunables are: {}'.format(valid_tunables)
